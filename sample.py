@@ -2,9 +2,9 @@
 import cv2
 
 # 画像１
-img1 = cv2.imread("img1.jpg")
+img1 = cv2.imread("C:\\Users\\soyori\\Documents\\GitHub\\CvTest\\template.jpg")
 # 画像２
-img2 = cv2.imread("img2.jpg")
+img2 = cv2.imread("C:\\Users\\soyori\\Documents\\GitHub\\CvTest\\target.jpg")
 
 # A-KAZE検出器の生成
 akaze = cv2.AKAZE_create()                                
@@ -19,15 +19,14 @@ bf = cv2.BFMatcher()
 # 特徴量ベクトル同士をBrute-Force＆KNNでマッチング
 matches = bf.knnMatch(des1, des2, k=2)
 
-# データを間引きする
 ratio = 0.5
-good = []
+lowe = []
 for m, n in matches:
     if m.distance < ratio * n.distance:
-        good.append([m])
+        lowe.append([m])
 
 # 対応する特徴点同士を描画
-img3 = cv2.drawMatchesKnn(img1, kp1, img2, kp2, good[], None, flags=2)
+img3 = cv2.drawMatchesKnn(img1, kp1, img2, kp2, lowe, None, flags=2)
 
 # 画像表示
 cv2.imshow('img', img3)
