@@ -11,6 +11,11 @@ import cv2
 def GetOcrRectangle((x,y),(w,h), ratio):
     # X座標は x-25 px, Y座標は y+h px, Wは　1900*ratio, Hは 100*ratio px
 
+def GetOcrResult(croped_image_path):
+    ### returns ocr recognized string
+    result = ''
+    return result
+
 def GetMatchedRectangle(template_path, image_path):
     ### returns tupple ((x,y), (w,h))
 
@@ -84,6 +89,8 @@ def GetMatchedRectangle(template_path, image_path):
 # ap.add_argument("-v", "--visualize",
 	# help="Flag indicating whether or not to visualize each iteration")
 # args = vars(ap.parse_args())
+
+
 if __name__ == '__main__':
     ((x, y),(w,h)) = GetMatchedRectangle('template.png', 'images/20170707123354_00001_0.95.jpg')
     print(('Origin X: %s Y: %s, Width: %s Height: %s') % (x, y, w, h))
