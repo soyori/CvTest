@@ -1,36 +1,89 @@
 # -*- coding: utf-8 -*-
+
+
+# import the necessary packages
+import numpy as np
+import argparse
+import imutils
+import glob
 import cv2
 
-# 画像１
-img1 = cv2.imread("C:\\Users\\soyori\\Documents\\GitHub\\CvTest\\template.jpg")
-# 画像２
-img2 = cv2.imread("C:\\Users\\soyori\\Documents\\GitHub\\CvTest\\target.jpg")
+def GetOcrRectangle((x,y),(w,h), ratio):
+    # X座標は x-25 px, Y座標は y+h px, Wは　1900*ratio, Hは 100*ratio px
 
-# A-KAZE検出器の生成
-akaze = cv2.AKAZE_create()                                
+def GetMatchedRectangle(template_path, image_path):
+    ### returns tupple ((x,y), (w,h))
 
-# 特徴量の検出と特徴量ベクトルの計算
-kp1, des1 = akaze.detectAndCompute(img1, None)
-kp2, des2 = akaze.detectAndCompute(img2, None)
+    # load the image image, convert it to grayscale, and detect edges
+    template = cv2.imread(template_path)
+    template = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
+    template = cv2.Canny(template, 50, 200)
+    (tH, tW) = template.shape[:2]
+	
+    print(('\nLooking for image: %s') % (image_path) )
+    # load the image, convert it to grayscale, and initialize the
+    # bookkeeping variable to keep track of the matched region
+    image = cv2.imread(image_path)
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    found = None
 
-# Brute-Force Matcher生成
-bf = cv2.BFMatcher()
+    # loop over the scales of the image
+    for scale in np.linspace(0.2, 1.0, 20)[::-1]:
+        # resize the image according to the scale, and keep track
+        # of the ratio of the resizing
+        resized = imutils.resize(gray, width = int(gray.shape[1] * scale))
+        r = gray.shape[1] / float(resized.shape[1])
 
-# 特徴量ベクトル同士をBrute-Force＆KNNでマッチング
-matches = bf.knnMatch(des1, des2, k=2)
+        # if the resized image is smaller than the template, then break
+        # from the loop
+        if resized.shape[0] < tH or resized.shape[1] < tW:
+            break
 
-ratio = 0.5
-lowe = []
-for m, n in matches:
-    if m.distance < ratio * n.distance:
-        lowe.append([m])
+        # detect edges in the resized, grayscale image and apply template
+        # matching to find the template in the image
+        edged = cv2.Canny(resized, 50, 200)
+        result = cv2.matchTemplate(edged, template, cv2.TM_CCOEFF)
+        (_, maxVal, _, maxLoc) = cv2.minMaxLoc(result)
 
-# 対応する特徴点同士を描画
-img3 = cv2.drawMatchesKnn(img1, kp1, img2, kp2, lowe, None, flags=2)
+        # check to see if the iteration should be visualized
+        # if args.get("visualize", False):
+            # # draw a bounding box around the detected region
+            # clone = np.dstack([edged, edged, edged])
+            # cv2.rectangle(clone, (maxLoc[0], maxLoc[1]),
+                # (maxLoc[0] + tW, maxLoc[1] + tH), (0, 0, 255), 2)
+            # cv2.imshow("Visualize", clone)
+            # cv2.waitKey(0)
 
-# 画像表示
-cv2.imshow('img', img3)
+        # if we have found a new maximum correlation value, then ipdate
+        # the bookkeeping variable
+        if found is None or maxVal > found[0]:
+            found = (maxVal, maxLoc, r)
 
-# キー押下で終了
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+    # unpack the bookkeeping varaible and compute the (x, y) coordinates
+    # of the bounding box based on the resized ratio
+    (_, maxLoc, r) = found
+    (startX, startY) = (int(maxLoc[0] * r), int(maxLoc[1] * r))
+    (endX, endY) = (int((maxLoc[0] + tW) * r), int((maxLoc[1] + tH) * r))
+
+    # draw a bounding box around the detected result and display the image
+    # cv2.rectangle(image, (startX, startY), (endX, endY), (0, 0, 255), 2)
+    # cv2.imshow("Image", image)
+    # cv2.waitKey(0)
+
+    # print(('Start X: %s Y: %s, End X: %s Y: %s') % (startX, startY, endX, endY))
+    iH = endY - startY
+    iW = endX - startX
+    # print(('Image size ratio: %s') % (iH/tH))
+    return ((startX, startY),(iW,iH))
+
+# construct the argument parser and parse the arguments
+# ap = argparse.ArgumentParser()
+# ap.add_argument("-t", "--template", required=True, help="Path to template image")
+# ap.add_argument("-i", "--images", required=True,
+	# help="Path to images where template will be matched")
+# ap.add_argument("-v", "--visualize",
+	# help="Flag indicating whether or not to visualize each iteration")
+# args = vars(ap.parse_args())
+if __name__ == '__main__':
+    ((x, y),(w,h)) = GetMatchedRectangle('template.png', 'images/20170707123354_00001_0.95.jpg')
+    print(('Origin X: %s Y: %s, Width: %s Height: %s') % (x, y, w, h))
