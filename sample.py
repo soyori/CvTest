@@ -2,9 +2,9 @@
 import cv2
 
 # 画像１
-img1 = cv2.imread("C:\\Users\\soyori\\Documents\\GitHub\\CvTest\\template.jpg")
+img1 = cv2.imread("template.jpg")
 # 画像２
-img2 = cv2.imread("C:\\Users\\soyori\\Documents\\GitHub\\CvTest\\target.jpg")
+img2 = cv2.imread("target.jpg")
 
 # A-KAZE検出器の生成
 akaze = cv2.AKAZE_create()                                
